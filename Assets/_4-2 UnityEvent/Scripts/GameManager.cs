@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour
     /// <summary>ライフの現在値</summary>
     int _life;
     /// <summary>ゲームのスコア</summary>
-    int _score = 0;
+    public static int _score = 0;
     /// <summary>全ての敵オブジェクトを入れておくための List</summary>
     List<GunEnemyController> _enemies = null;
     /// <summary>現在照準で狙われている敵</summary>
@@ -131,6 +131,11 @@ public class GameManager : MonoBehaviour
         if (_life < 1)
         {
             Gameover();
+        }
+        if(_score>500)
+        {
+            _life += 1;
+            _score = 0;
         }
     }
 }

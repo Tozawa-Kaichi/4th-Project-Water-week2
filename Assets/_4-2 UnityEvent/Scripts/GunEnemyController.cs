@@ -32,9 +32,10 @@ public class GunEnemyController : MonoBehaviour
     /// <summary>敵が銃を撃った時に実行される処理</summary>
     [SerializeField] UnityEngine.Events.UnityEvent _onShoot = null;
     /// <summary>ゲームの総得点</summary>
-    public static int _totalScore = 0; //  此処がキャラごとに固有になっていた故 スタティックに変更
+    int _totalScore = 0; //  此処がキャラごとに固有になっていた故 スタティックに変更
     /// <summary>スコアを表示するための Text(UI)</summary>
     [SerializeField] public Text _scoreText = null;
+    [SerializeField] 
 
     /// <summary>
     /// 初期化処理
@@ -108,10 +109,8 @@ public class GunEnemyController : MonoBehaviour
         _status = GunEnemyStatus.Idle;
         _animator.SetTrigger("Hit");
         _collider.enabled = false;
-        _totalScore += _score;
         Debug.Log($"{name} got hit. Score: {_totalScore}");
-        _scoreText.text = string.Format("{0:00000000000}", _totalScore);
-        GameManager._score = _totalScore;
+
         return _score;
     }
 }

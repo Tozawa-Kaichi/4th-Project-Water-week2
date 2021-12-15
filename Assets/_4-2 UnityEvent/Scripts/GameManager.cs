@@ -37,19 +37,26 @@ public class GameManager : MonoBehaviour
     /// <summary>ライフの現在値</summary>
     int _life;
     /// <summary>ゲームのスコア</summary>
-    public static int _score = 0;
+    public int _score = 0;
     /// <summary>全ての敵オブジェクトを入れておくための List</summary>
     List<GunEnemyController> _enemies = null;
     /// <summary>現在照準で狙われている敵</summary>
     GunEnemyController _currentTargetEnemy = null;
     /// <summary>ライフを表示するための GameObject</summary>
     GameObject _lifeObject;
-
+    int _fscore;
+    [SerializeField]int _lifeborder=5000;
+    bool started = false;
+    [SerializeField] UnityEngine.Events.UnityEvent _ontrueStart;
+    [SerializeField] UnityEngine.Events.UnityEvent _upsound;
+    [SerializeField] UnityEngine.Events.UnityEvent _ee;
     /// <summary>
-    /// ゲームを初期化する
+    ///
+    /// アプリケーションを初期化する
     /// </summary>
     void Start()
     {
+        started = false;
         _onGameStart.Invoke();
         _life = _initialLife;
         _enemies = GameObject.FindObjectsOfType<GunEnemyController>().ToList();
@@ -61,7 +68,13 @@ public class GameManager : MonoBehaviour
         {
             Cursor.visible = false;
         }
+
     }
+    /// <summary>
+    /// ゲーム初期化する
+    /// </summary>
+    /// 
+
 
     /// <summary>
     /// ゲームをやり直す
@@ -69,7 +82,9 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         Debug.Log("Restart");
+        _score = 0;
         _enemies.ForEach(enemy => enemy.gameObject.SetActive(true));
+        Addscore(0);
         Start();
     }
 
@@ -81,39 +96,64 @@ public class GameManager : MonoBehaviour
         Debug.Log("Gameover");
         _enemies.ForEach(enemy => enemy.gameObject.SetActive(false));
         _onGameOver.Invoke();
+        _ee.Invoke();
+        
     }
 
     void Update()
     {
-        // 照準を処理する
-        _crosshairImage.rectTransform.position = Input.mousePosition;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, _rangeDistance))
+        if(Input.GetButtonDown("Fire1"))
         {
-            _gunObject.transform.LookAt(hit.point);    // 銃の方向を変えている
+            started = true;
+            _ontrueStart.Invoke();
         }
-
-        // 敵が照準に入っているか調べる
-        bool isEnemyTargeted = Physics.Raycast(ray, out hit, _rangeDistance, _enemyLayer);
-        _crosshairImage.color = isEnemyTargeted ? _colorFocus : _colorNormal;    // 三項演算子 ? を使っている
-        _currentTargetEnemy = isEnemyTargeted ? hit.collider.gameObject.GetComponent<GunEnemyController>() : null;    // 三項演算子 ? を使っている
-
-        // 左クリック入力時の処理
-        if (Input.GetButtonDown("Fire1"))
+        if (started)
         {
-            _onShoot.Invoke();
+            // 照準を処理する
+            _crosshairImage.rectTransform.position = Input.mousePosition;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
 
-            // 敵に当たったら得点を足して表示を更新する
-            if (_currentTargetEnemy)
+            if (Physics.Raycast(ray, out hit, _rangeDistance))
             {
-                _currentTargetEnemy.Hit();
+                _gunObject.transform.LookAt(hit.point);    // 銃の方向を変えている
+            }
+
+            // 敵が照準に入っているか調べる
+            bool isEnemyTargeted = Physics.Raycast(ray, out hit, _rangeDistance, _enemyLayer);
+            _crosshairImage.color = isEnemyTargeted ? _colorFocus : _colorNormal;    // 三項演算子 ? を使っている
+            _currentTargetEnemy = isEnemyTargeted ? hit.collider.gameObject.GetComponent<GunEnemyController>() : null;    // 三項演算子 ? を使っている
+
+            // 左クリック入力時の処理
+            if (Input.GetButtonDown("Fire1"))
+            {
+                _onShoot.Invoke();
+
+                // 敵に当たったら得点を足して表示を更新する
+                if (_currentTargetEnemy)
+                {
+                    Addscore(_currentTargetEnemy.Hit());
+                }
             }
         }
     }
+    public void Addscore(int _s)
+    {
+        _score += _s;
+        _fscore += _s;
+        _scoreText.text = _score.ToString("D8");
+        if (_fscore>=_lifeborder)
+        {
+            _lifeborder+=_lifeborder;
+            _life += 1;
+            _upsound.Invoke();
+            Debug.Log($"Hit by enemy. Life: {_life}");
+            _lifeText.text = string.Format("{0:000}", _life);
+            
+        }
 
-    private void OnApplicationQuit()
+    }
+        private void OnApplicationQuit()
     {
         Cursor.visible = true;
     }
@@ -131,11 +171,6 @@ public class GameManager : MonoBehaviour
         if (_life < 1)
         {
             Gameover();
-        }
-        if(_score>500)
-        {
-            _life += 1;
-            _score = 0;
         }
     }
 }

@@ -46,6 +46,8 @@ public class GameManager : MonoBehaviour
     GameObject _lifeObject;
     int _fscore;
     [SerializeField]int _lifeborder=5000;
+    [SerializeField]
+    int _lifeborderdefault = 5000;
     bool started = false;
     [SerializeField] UnityEngine.Events.UnityEvent _ontrueStart;
     [SerializeField] UnityEngine.Events.UnityEvent _upsound;
@@ -56,25 +58,30 @@ public class GameManager : MonoBehaviour
     /// </summary>
     void Start()
     {
-        started = false;
-        _onGameStart.Invoke();
-        _life = _initialLife;
+        if (_hideSystemMouseCursor)
+        {Cursor.visible = false;}
         _enemies = GameObject.FindObjectsOfType<GunEnemyController>().ToList();
+        _enemies.ForEach(enemy => enemy.gameObject.SetActive(false));
+        
+        started = false;
         _lifeObject = GameObject.Find("LifeText");
         _lifeText = _lifeObject.GetComponent<Text>();
-        _lifeText.text = string.Format("{0:000}", _life);
-
-        if (_hideSystemMouseCursor)
-        {
-            Cursor.visible = false;
-        }
+        StartGame();
 
     }
+
     /// <summary>
     /// ゲーム初期化する
     /// </summary>
-    /// 
-
+    public void StartGame()
+    {
+        _onGameStart.Invoke();
+        _life = _initialLife;
+        _lifeText.text = string.Format("{0:000}", _life);
+        _score = 0;
+        _lifeborder = _lifeborderdefault;
+        Addscore(0);
+    }
 
     /// <summary>
     /// ゲームをやり直す
@@ -82,10 +89,8 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         Debug.Log("Restart");
-        _score = 0;
         _enemies.ForEach(enemy => enemy.gameObject.SetActive(true));
-        Addscore(0);
-        Start();
+        StartGame();
     }
 
     /// <summary>
@@ -96,8 +101,6 @@ public class GameManager : MonoBehaviour
         Debug.Log("Gameover");
         _enemies.ForEach(enemy => enemy.gameObject.SetActive(false));
         _onGameOver.Invoke();
-        _ee.Invoke();
-        
     }
 
     void Update()
@@ -106,6 +109,7 @@ public class GameManager : MonoBehaviour
         {
             started = true;
             _ontrueStart.Invoke();
+            _ee.Invoke();
         }
         if (started)
         {
@@ -171,6 +175,7 @@ public class GameManager : MonoBehaviour
         if (_life < 1)
         {
             Gameover();
+            started = false;
         }
     }
 }
